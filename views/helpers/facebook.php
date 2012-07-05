@@ -448,17 +448,29 @@ class FacebookHelper extends AppHelper {
 	/**
 	* HTML XMLNS tag (required)
 	* @param array $options
+	* @param boolean to reload or redirect the browser after login or logout.
+	* @param string URL to redirect when login. NULL to reload browser instead.
+	* @param string URL to redirect when logout. NULL to reload browser instead.
 	* @example $this->Facebook->init();
 	* @return string of scriptBlock for FB.init() or error
 	*/
-	function init($options = null, $reload = true) {
+	function init($options = null, $reload = true, $loginUrl = null, $logoutUrl = null) {
 		if (empty($options)) {
 			$options = array();
 		}
 		if ($appId = FacebookInfo::getConfig('appId')) {
 			$session = json_encode($this->Session->read('FB.Session'));
 			if ($reload) {
-				$callback = "FB.Event.subscribe('auth.login',function(){window.location.reload()});";
+				if (!empty($loginUrl)) {
+					$callback = "FB.Event.subscribe('auth.login',function(){window.location = '".Router::url($loginUrl,true)."'});\n\t";
+				} else {
+					$callback = "FB.Event.subscribe('auth.login',function(){window.location.reload()});\n\t";
+				}
+				if (!empty($logoutUrl)) {
+					$callback .= "FB.Event.subscribe('auth.logout',function(){window.location = '".Router::url($logoutUrl,true)."'});";
+				} else {
+					$callback .= "FB.Event.subscribe('auth.logout',function(){window.location.reload()});";
+				}
 			} else {
 				$callback = "if(typeof(facebookReady)=='function'){facebookReady()}";
 			}
